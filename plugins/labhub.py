@@ -115,9 +115,31 @@ class LabHub(BotPlugin):
             ).render(
                 target=invitee,
             )
+        elif self.TEAMS[self.GH_ORG_NAME + ' developers'].is_member(inviter):
+            if team == 'newcomers':
+                room_members = msg.frm.room.occupants
+                if invitee in room_members:
+                    self.TEAMS[self.GH_ORG_NAME + ' newcomers'].invite(invitee)
+                    return tenv().get_template(
+                        'labhub/promotions/newcomers.jinja2.md'
+                    ).render(
+                        target=invitee,
+                    )
+                else:
+                    return tenv().get_template(
+                        'labhub/errors/not-room-member.jinja2.md'
+                    ).render(
+                        target=invitee,
+                    )
+            else:
+                return tenv().get_template(
+                    'labhub/errors/not-newcomers-team.jinja2.md'
+                ).render(
+                    target=invitee,
+                )
         else:
             return tenv().get_template(
-                'labhub/errors/not-maintainer.jinja2.md'
+                'labhub/errors/not-maintainer-or-dev.jinja2.md'
             ).render(
                 action='invite other people',
                 target=invitee,

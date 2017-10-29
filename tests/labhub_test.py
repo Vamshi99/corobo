@@ -11,7 +11,8 @@ from IGitt.GitHub.GitHubMergeRequest import GitHubMergeRequest
 from IGitt.GitLab.GitLabMergeRequest import GitLabMergeRequest
 from IGitt.GitHub.GitHubIssue import GitHubIssue
 
-from errbot.backends.test import TestBot
+from errbot.backends.test import TestBot, TestRoom, TestOccupant
+from errbot.backends.base import Message
 
 import plugins.labhub
 from plugins.labhub import LabHub
@@ -36,26 +37,40 @@ class TestLabHub(unittest.TestCase):
         plugins.labhub.github3.organization.return_value = self.mock_org
 
     def test_invite_cmd(self):
+        mock_dev_team = create_autospec(github3.orgs.Team)
+        mock_maint_team = create_autospec(github3.orgs.Team)
+        mock_dev_team.is_member.return_value = False
+        mock_maint_team.is_member.return_value = False
+
         teams = {
-            'coala maintainers': self.mock_team,
             'coala newcomers': self.mock_team,
-            'coala developers': self.mock_team
+            'coala developers': mock_dev_team,
+            'coala maintainers': mock_maint_team
         }
 
         labhub, testbot = plugin_testbot(plugins.labhub.LabHub, logging.ERROR)
         labhub.activate()
         labhub._teams = teams
 
-        self.mock_team.is_member.return_value = True
+        mock_maint_team.is_member.return_value = True
         plugins.labhub.os.environ['GH_TOKEN'] = 'patched?'
         testbot.assertCommand('!invite meet to developers',
                                    '@meet, you are a part of developers')
         self.assertEqual(labhub.TEAMS, teams)
         testbot.assertCommand('!invite meet to something',
                                    'select from one of the')
-
-        self.mock_team.is_member.return_value = False
-
+        mock_dev_team.is_member.return_value = True
+        mock_maint_team.is_member.return_value = False
+        # config={'MESSAGE_SIZE_LIMIT': 40, 'BOT_IDENTITY': {'token': '11'},
+        #         'CHATROOM_PRESENCE': 'test/room'}
+        # backend = GitterBackend(config=config)
+        # testroom = GitterRoom(backend=backend, idd='11', uri='test/room',
+        #                       name='room')
+        # testuser = GitterRoomOccupant('someone', testroom)
+        # msg = Message(body='!invite someone to newcomers', to=testroom,
+        #               frm=testuser)
+        # testroom._occupants.append('someone')
+        # testbot.assertCommand(msg.body, '@someone, just sent you an invite')
         testbot.assertCommand('!invite meet to developers',
                                    ':poop:')
 
