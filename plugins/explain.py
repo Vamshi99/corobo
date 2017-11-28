@@ -90,14 +90,19 @@ class Explain(BotPlugin):
         '\n- '.join(MSGS.keys())
     )
 
-    @re_botcmd(pattern=r'^explain\s+(\w+)(?:\s+to\s+@?([\w-]+))?$',
+    @re_botcmd(pattern=r'^explain(\s+(\w+)(?:\s+to\s+@?([\w-]+))?)$',
                re_cmd_name_help='explain <term>',
                flags=re.IGNORECASE)
     def explain(self, msg, match):
         """Explain various terms."""  # Ignore QuotesBear
-        return ('{}'.format('@{}: \n'.format(match.group(2))
-                            if match.group(2) else '') +
+        if  match.group(1):
+            return ('{}'.format('@{}: \n'.format(match.group(3))
+                            if match.group(3) else '') +
                 self.MSGS.get(
-                    match.group(1).lower(),
+                    match.group(2).lower(),
                     self.ERROR_MSG
                 ).format(bot_prefix=self.bot_config.BOT_PREFIX))
+        else:
+            return('Invalid command args. Usage: `{} '
+                   'explain <term>`.'.format(
+                   self.bot_config.BOT_PREFIX))

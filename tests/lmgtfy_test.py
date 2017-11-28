@@ -13,3 +13,4 @@ def test_lmgtfy(testbot):
                           text.convert(
                               Lmgtfy.MSG.format("https://www.lmgtfy.com/?q=py c")
                           ))
+    testbot.assertCommand('!lmgtfy', 'Invalid command args.')

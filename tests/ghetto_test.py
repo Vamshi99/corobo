@@ -12,3 +12,4 @@ def test_ghetto(testbot):
         m.register_uri('POST', 'http://www.gizoogle.net/textilizer.php',
                        text='test text which will not match with the regex')
         testbot.assertCommand("!ghetto ...", "Shiznit happens!")
+        testbot.assertCommand("!ghetto", "Invalid command args.")

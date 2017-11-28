@@ -21,3 +21,4 @@ def test_explain(testbot):
                           '@meet')
     testbot.assertCommand("!please explain review",
                           "Command \"please\" / \"please explain\" not found.")
+    testbot.assertCommand("!explain", "Invalid command args.")

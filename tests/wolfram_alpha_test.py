@@ -20,6 +20,7 @@ class WolframAlphaTest(unittest.TestCase):
     @my_vcr.use_cassette('tests/cassettes/wa.yaml')
     def test_wa(self):
         self.testbot.assertCommand("!wa 2^6", "64")
+        self.testbot.assertCommand("!wa", "Invalid command args.")
         with self.assertLogs() as cm:
             self.testbot.assertCommand('!wa this is a sentence',
                                        'Dunno')

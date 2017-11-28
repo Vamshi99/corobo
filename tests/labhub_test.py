@@ -57,6 +57,7 @@ class TestLabHub(unittest.TestCase):
 
         testbot.assertCommand('!invite meet to developers',
                                    ':poop:')
+        testbot.assertCommand('!invite', 'Invalid command args.')
 
     def test_hello_world_callback(self):
         teams = {
@@ -98,7 +99,7 @@ class TestLabHub(unittest.TestCase):
         )
 
         testbot.assertCommand('!new issue coala title', 'repository that does not exist')
-
+        testbot.assertCommand('!new issue', 'Invalid command ars.')
     def test_unassign_cmd(self):
         plugins.labhub.GitHub = create_autospec(IGitt.GitHub.GitHub.GitHub)
         plugins.labhub.GitLab = create_autospec(IGitt.GitLab.GitLab.GitLab)
@@ -128,6 +129,7 @@ class TestLabHub(unittest.TestCase):
 
         testbot.assertCommand('!unassign https://gitlab.com/ala/am/issues/532',
                                'Repository not owned by our org.')
+        testbot.assertCommand('!unassign', 'Invalid command args.')
 
     def test_assign_cmd(self):
         plugins.labhub.GitHub = create_autospec(IGitt.GitHub.GitHub.GitHub)
@@ -215,7 +217,7 @@ class TestLabHub(unittest.TestCase):
         # unknown org
         testbot.assertCommand(cmd.format('coa', 'a', '23'),
                               'Repository not owned by our org.')
-
+        testbot.assertCommand('!assign', 'Invalid command args.')
     def test_mark_cmd(self):
         labhub, testbot = plugin_testbot(plugins.labhub.LabHub, logging.ERROR)
         labhub.activate()
@@ -240,7 +242,7 @@ class TestLabHub(unittest.TestCase):
         mock_mr.labels = ['process/wip']
         testbot.assertCommand(cmd.format('pending', 'coala', 'a', '23'),
                               'marked pending review')
-
+        testbot.assertCommand('!mark', 'Invalid command args.')
     def test_alive(self):
         labhub, testbot = plugin_testbot(plugins.labhub.LabHub, logging.ERROR)
         with patch('plugins.labhub.time.sleep') as mock_sleep:
@@ -277,6 +279,7 @@ class TestLabHub(unittest.TestCase):
             testbot.assertCommand('!pr stats 3hours',
                                   '10 PRs opened in last 3 hours\n'
                                   'The community is on fire')
+            testbot.assertCommand('!pr stats', 'Invalid command args.')
 
     def test_invite_me(self):
         teams = {
