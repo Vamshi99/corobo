@@ -10,15 +10,18 @@ class Ghetto(BotPlugin):
     Real talk yo
     """
 
-    @re_botcmd(pattern=r'ghetto\s+(.+)',
+    @re_botcmd(pattern=r'ghetto(\s+(.+))?',
                re_cmd_name_help='ghetto <sentence>',
                flags=re.IGNORECASE)
     def ghetto(self, msg, match):
         """
         Real talk yo
         """
+        if match.group(1) is None:
+            return('Invalid command args. Usage: `{} '
+                   'ghetto <sentence>`'.format(self.bot_config.BOT_PREFIX))
         rq = requests.post('http://www.gizoogle.net/textilizer.php',
-                           data={'translatetext': match.group(1)})
+                           data={'translatetext': match.group(2)})
 
         translated_text = re.search(
             r'<textarea .*;\"/>(.+)</textarea>', rq.text)

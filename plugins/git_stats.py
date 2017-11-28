@@ -18,13 +18,15 @@ class GitStats(LabHub):
     def __init__(self, bot, name=None):
         super().__init__(bot, name)
 
-    @re_botcmd(pattern=r'mergable\s+([^/]+)',  # Ignore PyCodeStyleBear
+    @re_botcmd(pattern=r'mergable(\s+([^/]+))?',  # Ignore PyCodeStyleBear
                re_cmd_name_help='pr list <repo>',
                flags=re.IGNORECASE)
     def pr_list(self, msg, match):
         """List PRs ready to be merged."""  # Ignore QuotesBear
-        repo_name = match.groups(1)[0]
-
+        if match.group(1) is None:
+            return('Invalid command args. Usage: `pr list '
+                   '<repo>`'.format(self.bot_config.BOT_PREFIX))
+        repo_name = match.group(2)
         try:
             merge_requests = self.REPOS[repo_name].merge_requests
         except KeyError:

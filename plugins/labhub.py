@@ -72,14 +72,18 @@ class LabHub(BotPlugin):
         self._teams = new
 
     # Ignore LineLengthBear, PycodestyleBear
-    @re_botcmd(pattern=r'^(?:(?:welcome)|(?:inv)|(?:invite))\s+(?:(?:@?([\w-]+)(?:\s+(?:to)\s+(\w+))?)|(me))$',
+    @re_botcmd(pattern=r'^(?:(?:welcome)|(?:inv)|(?:invite))(\s+(?:(?:@?([\w-]+)(?:\s*(?:to)\s+(\w+))?)|(me)))?$',
                re_cmd_name_help='invite ([@]<username> [to <team>]|me)')
     def invite_cmd(self, msg, match):
         """
         Invite given user to given team. By default it invites to
         "newcomers" team.
         """
-        invitee = match.group(1)
+        if match.group(1) is None:
+            return('Invalid command args. Usage: `{} (invite|inv) '
+                   '((member|member to [team])|me)`'.format(
+                        self.bot_config.BOT_PREFIX))
+        invitee = match.group(2)
         inviter = msg.frm.nick
 
         if invitee == 'me':
@@ -94,7 +98,7 @@ class LabHub(BotPlugin):
             self.invited_users.add(user)
             return
 
-        team = 'newcomers' if match.group(2) is None else match.group(2)
+        team = 'newcomers' if match.group(3) is None else match.group(3)
 
         self.log.info('{} invited {} to {}'.format(inviter, invitee, team))
 
@@ -139,15 +143,18 @@ class LabHub(BotPlugin):
                 self.TEAMS[self.GH_ORG_NAME + ' newcomers'].invite(user)
                 self.invited_users.add(user)
 
-    @re_botcmd(pattern=r'(?:new|file) issue ([\w\-\.]+?)(?: |\n)(.+?)(?:$|\n((?:.|\n)*))',  # Ignore LineLengthBear, PyCodeStyleBear
+    @re_botcmd(pattern=r'(?:new|file) issue( ([\w\-\.]+?)(?: |\n)(.+?)(?:$|\n((?:.|\n)*)))?',  # Ignore LineLengthBear, PyCodeStyleBear
                re_cmd_name_help='new issue repo-name title\n[description]',
                flags=re.IGNORECASE)
     def create_issue_cmd(self, msg, match):
         """Create issues on GitHub and GitLab repositories."""  # Ignore QuotesBear, LineLengthBear, PyCodeStyleBear
+        if match.group(1) is None:
+            return('Invalid command args. Usage: `{} (new|file) issue repo-name'
+                   ' title\n[description]`'.format(self.bot_config.BOT_PREFIX))
         user = msg.frm.nick
-        repo_name = match.group(1)
-        iss_title = match.group(2)
-        iss_description = match.group(3) if match.group(3) is not None else ''
+        repo_name = match.group(2)
+        iss_title = match.group(3)
+        iss_description = match.group(4) if match.group(4) is not None else ''
         extra_msg = '\nOpened by @{username} at [{backend}]({msg_link})'.format(
             username=user,
             backend=self.bot_config.BACKEND,
@@ -165,14 +172,17 @@ class LabHub(BotPlugin):
                 target=user,
             )
 
-    @re_botcmd(pattern=r'^unassign\s+https://(github|gitlab)\.com/([^/]+)/([^/]+)/issues/(\d+)',  # Ignore LineLengthBear, PyCodeStyleBear
+    @re_botcmd(pattern=r'^unassign(\s+https://(github|gitlab)\.com/([^/]+)/([^/]+)/issues/(\d+))?',  # Ignore LineLengthBear, PyCodeStyleBear
                re_cmd_name_help='unassign <complete-issue-URL>',
                flags=re.IGNORECASE)
     def unassign_cmd(self, msg, match):
         """Unassign from an issue."""  # Ignore QuotesBear
-        org = match.group(2)
-        repo_name = match.group(3)
-        issue_number = match.group(4)
+        if match.group(1) is None:
+            return('Invalid command args. Usage: `{} unassign '
+                   '<complete-issue-URL>`'.format(self.bot_config.BOT_PREFIX))
+        org = match.group(3)
+        repo_name = match.group(4)
+        issue_number = match.group(5)
 
         user = msg.frm.nick
 
@@ -192,13 +202,15 @@ class LabHub(BotPlugin):
             else:
                 return 'You are not an assignee on the issue.'
 
-    @re_botcmd(pattern=r'mark\s+(wip|pending(?:(?:-|\s+)review)?\b)\s+https://(github|gitlab)\.com/([^/]+)/([^/]+)/(pull|merge_requests)/(\d+)',  # Ignore LineLengthBear, PyCodeStyleBear
+    @re_botcmd(pattern=r'mark(\s+(wip|pending(?:(?:-|\s+)review)?\b)\s+https://(github|gitlab)\.com/([^/]+)/([^/]+)/(pull|merge_requests)/(\d+))?',  # Ignore LineLengthBear, PyCodeStyleBear
                re_cmd_name_help='mark (wip|pending) <complete-PR-URL>',
                flags=re.IGNORECASE)
     def mark_cmd(self, msg, match):
         """Mark a given PR/MR with status labels."""  # Ignore QuotesBear
-        state, host, org, repo_name, xr, number = match.groups()
-
+        arg, state, host, org, repo_name, xr, number = match.groups()
+        if arg is None:
+            return('Invalid command args. Usage: `{} mark (wip|pending) '
+                   '<complete-PR-URL>`'.format(self.bot_config.BOT_PREFIX))
         if host.lower() == 'github':
             assert xr.lower() == 'pull'
         elif host.lower() == 'gitlab':
@@ -247,14 +259,17 @@ class LabHub(BotPlugin):
                             bot_prefix=self.bot_config.BOT_PREFIX)
                         )
 
-    @re_botcmd(pattern=r'^assign\s+https://(github|gitlab)\.com/([^/]+)/([^/]+/)+issues/(\d+)',  # Ignore LineLengthBear, PyCodeStyleBear
+    @re_botcmd(pattern=r'^assign(\s+https://(github|gitlab)\.com/([^/]+)/([^/]+/)+issues/(\d+))?',  # Ignore LineLengthBear, PyCodeStyleBear
                re_cmd_name_help='assign <complete-issue-URL>',
                flags=re.IGNORECASE)
     def assign_cmd(self, msg, match):
         """Assign to GitLab and GitHub issues."""  # Ignore QuotesBear
-        org = match.group(2)
-        repo_name = match.group(3)[:-1]
-        iss_number = match.group(4)
+        if match.group(1) is None:
+            return('Invalid command args. Usage: `{} assign '
+                   '<complete-issue-URL>`'.format(self.bot_config.BOT_PREFIX))
+        org = match.group(3)
+        repo_name = match.group(4)[:-1]
+        iss_number = match.group(5)
 
         user = msg.frm.nick
 
@@ -346,10 +361,13 @@ class LabHub(BotPlugin):
         else:
             return 'dead'
 
-    @re_botcmd(pattern=r'pr\s+stats\s+(\d+)(?:hours|hrs)',
+    @re_botcmd(pattern=r'pr\s+stats(\s+(\d+)(?:hours|hrs))?',
                re_cmd_name_help='pr stats <number-of-hours>(hours|hrs)')
     def pr_stats(self, msg, match):
-        hours = match.group(1)
+        if match.group(1) is None:
+            return('Invalid command args. Usage: `{} pr stats <number-of-hours>'
+                   '(hours|hrs)`'.format(self.bot_config.BOT_PREFIX))
+        hours = match.group(2)
         pr_count = dict()
         start = time.time()
         for count, (name, repo) in enumerate(self.gh_repos.items(), 1):

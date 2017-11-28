@@ -58,6 +58,7 @@ class TestLabHub(unittest.TestCase):
 
         testbot.assertCommand('!invite meet to developers',
                                    ':poop:')
+        testbot.assertCommand('!invite', 'Invalid command args.')
 
         testbot.assertCommand('!invite meetto newcomers',
                                    'Command "invite" / "invite meetto" not found.')
@@ -123,6 +124,7 @@ class TestLabHub(unittest.TestCase):
 
         testbot_public.assertCommand('!new issue coala title', 'repository that does not exist')
 
+        testbot_public.assertCommand('!new issue', 'Invalid command args.')
     def test_unassign_cmd(self):
         plugins.labhub.GitHub = create_autospec(IGitt.GitHub.GitHub.GitHub)
         plugins.labhub.GitLab = create_autospec(IGitt.GitLab.GitLab.GitLab)
@@ -152,6 +154,7 @@ class TestLabHub(unittest.TestCase):
 
         testbot.assertCommand('!unassign https://gitlab.com/ala/am/issues/532',
                                'Repository not owned by our org.')
+        testbot.assertCommand('!unassign', 'Invalid command args.')
 
     def test_assign_cmd(self):
         plugins.labhub.GitHub = create_autospec(IGitt.GitHub.GitHub.GitHub)
@@ -233,6 +236,8 @@ class TestLabHub(unittest.TestCase):
         # unknown org
         testbot.assertCommand(cmd.format('coa', 'a', '23'),
                               'Repository not owned by our org.')
+        # command without args
+        testbot.assertCommand('!assign', 'Invalid command args.')
 
     def test_mark_cmd(self):
         labhub, testbot = plugin_testbot(plugins.labhub.LabHub, logging.ERROR)
@@ -287,6 +292,8 @@ class TestLabHub(unittest.TestCase):
                               'marked pending review')
         testbot.assertCommand(cmd_github.format('pending review', 'coala', 'a', '23'),
                               'marked pending review')
+        # command without args
+        testbot.assertCommand('!mark', 'Invalid command args.')
 
     def test_alive(self):
         labhub, testbot = plugin_testbot(plugins.labhub.LabHub, logging.ERROR)
@@ -324,6 +331,8 @@ class TestLabHub(unittest.TestCase):
             testbot.assertCommand('!pr stats 3hours',
                                   '10 PRs opened in last 3 hours\n'
                                   'The community is on fire')
+            testbot.assertCommand('!pr stats', 'Invalid command args.')
+
 
     def test_invite_me(self):
         teams = {
