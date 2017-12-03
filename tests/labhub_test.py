@@ -12,6 +12,8 @@ from IGitt.GitLab.GitLabMergeRequest import GitLabMergeRequest
 from IGitt.GitHub.GitHubIssue import GitHubIssue
 
 from errbot.backends.test import TestBot
+from errbot.backends.base import Message
+from errbot import BotPlugin
 
 import plugins.labhub
 from plugins.labhub import LabHub
@@ -346,3 +348,50 @@ class TestLabHub(unittest.TestCase):
                               'Command \"hey\" / \"hey there\" not found.')
         with self.assertRaises(queue.Empty):
              testbot.pop_message()
+             
+    def test_ban(self):
+        mock_dev_team = create_autospec(github3.orgs.Team)
+        mock_maint_team = create_autospec(github3.orgs.Team)
+        mock_dev_team.is_member.return_value = False
+        mock_maint_team.is_member.return_value = False
+        labhub, testbot = plugin_testbot(
+            plugins.labhub.LabHub, logging.ERROR,
+            {'USERS_TO_BLACKLIST': ['someuser']})
+        labhub.activate()
+
+        labhub.TEAMS = {'coala newcomers': self.mock_team,
+                        'coala developers': mock_dev_team,
+                        'coala maintainers': mock_maint_team}
+
+        mock_maint_team.is_member.return_value = True
+        testbot.assertCommand("!ban @testuser","you\'re banned")
+        # Already banned username
+        testbot.bot_config.USERS_TO_BLACKLIST.append("testuser")
+        testbot.assertCommand("!ban @testuser","user is already")
+        testbot.bot_config.USERS_TO_BLACKLIST.remove("testuser")
+        # Command used by a non-maintainer
+        mock_maint_team.is_member.return_value = False
+        testbot.assertCommand("!ban @testuser","only maintainers")
+     
+    def test_ban(self):
+        mock_dev_team = create_autospec(github3.orgs.Team)
+        mock_maint_team = create_autospec(github3.orgs.Team)
+        mock_dev_team.is_member.return_value = False
+        mock_maint_team.is_member.return_value = False
+        labhub, testbot = plugin_testbot(
+            plugins.labhub.LabHub, logging.ERROR,
+            {'USERS_TO_BLACKLIST': ['testuser']})
+        labhub.activate()
+
+        labhub.TEAMS = {'coala newcomers': self.mock_team,
+                        'coala developers': mock_dev_team,
+                        'coala maintainers': mock_maint_team}
+
+        mock_maint_team.is_member.return_value = True
+        testbot.assertCommand("!unban @testuser","you\'re banned")
+        # Not banned username
+        testbot.bot_config.USERS_TO_BLACKLIST.remove('testuser')
+        testbot.assertCommand("!unban @testuser","given username is")
+        # Command used by a non-maintainer
+        mock_maint_team.is_member.return_value = False
+        testbot.assertCommand("!unban @testuser","only maintainers")

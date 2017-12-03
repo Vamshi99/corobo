@@ -94,6 +94,8 @@ ROOMS_TO_JOIN = (
 
 CHATROOM_PRESENCE = os.environ.get('ROOMS', '').split() or ROOMS_TO_JOIN
 
+USERS_TO_BLACKLIST = []
+
 ACCESS_CONTROLS = {'render test': {
     'allowrooms': ('coala/cobot-test', 'coala/corobo',)},
     'LabHub:*': {'allowprivate': False}}

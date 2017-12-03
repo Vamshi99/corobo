@@ -21,6 +21,7 @@ class Filters(BotPlugin):
             if cmd in commands and msg.frm.room.uri == room:
                 return None, None, None
         return msg, cmd, args
+    
 
     @cmdfilter
     def filter_ignored_users(self, msg, cmd, args, dry_run):

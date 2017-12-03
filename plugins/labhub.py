@@ -3,6 +3,7 @@ import json
 import os
 import re
 import time
+import requests
 
 import github3
 from IGitt.GitHub.GitHub import GitHub, GitHubToken
@@ -381,3 +382,61 @@ class LabHub(BotPlugin):
                     state=type(self).community_state(pr_count)
                  )
         yield reply
+
+    @re_botcmd(pattern=r'^ban\s+@?([\w-]+)$',
+               re_cmd_name_help='ban <username>')
+    def ban_user(self, msg, match):
+        """Ban a user from this organization"""  # Ignore QuotesBear
+        ban_user = match.group(1)
+        ban_by = msg.frm.nick
+        if self.TEAMS[self.GH_ORG_NAME + ' maintainers'].is_member(ban_by):
+            self.bot_config.USERS_TO_BLACKLIST.append(ban_user)
+            gitter_token = self.bot_config.BOT_IDENTITY['token']
+            headers = {'Authorization': 'Bearer '
+                       '{}'.format(gitter_token),
+                       'Content-Type': 'application/json',
+                       'Accept': 'application/json'}
+            for room in self.bot_config.ROOMS_TO_JOIN:
+                data = json.dumps({"username": ban_user})
+                r = requests.post('https://api.gitter.im/v1/rooms/'
+                                  '{}/bans'.format(room.idd),
+                                  headers=headers,
+                                  data=data)
+                if r.status_code != 200:
+                    return("Error while banning user from"
+                           "{} gitter channel".format(msg.frm.room.uri))
+            return("@{}, you\'re banned from our "
+                   "organization".format(ban_user))
+        else:
+            return('@{}, only maintainers can ban a member.'.format(ban_by))
+
+    @re_botcmd(pattern=r'^unban\s+@?([\w-]+)$',
+               re_cmd_name_help='unban <username>')
+    def unban_user(self, msg, match):
+        """Unban a banned user from this organization"""  # Ignore QuotesBear
+        unban_user = match.group(1)
+        unban_by = msg.frm.nick
+        if self.TEAMS[self.GH_ORG_NAME + ' maintainers'].is_member(unban_by):
+            if unban_user in self.bot_config.USERS_TO_BLACKLIST:
+                self.bot_config.USERS_TO_BLACKLIST.remove(unban_user)
+                gitter_token = self.bot_config.BOT_IDENTITY['token']
+                headers = {'Authorization': 'Bearer '
+                           '{}'.format(gitter_token),
+                           'Content-Type': 'application/json',
+                           'Accept': 'application/json'}
+                for room in self.bot_config.ROOMS_TO_JOIN:
+                    data = json.dumps({"username": unban_user})
+                    r = requests.delete('https://api.gitter.im/v1/rooms/'
+                                        '{}/bans'.format(room.idd),
+                                        headers=headers,
+                                        data=data)
+                    if r.status_code != 200:
+                        return("Error while unbanning user from"
+                               "{} gitter channel".format(room.uri))
+                return("@{}, you\'re unbanned from our "
+                       "organization".format(unban_user))
+            else:
+                return("@{}, given username is not a banned "
+                       "user.".format(unban_by))
+        else:
+            return('@{}, only maintainers can unban a member.'.format(unban_by))
