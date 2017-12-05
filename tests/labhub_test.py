@@ -12,6 +12,8 @@ from IGitt.GitLab.GitLabMergeRequest import GitLabMergeRequest
 from IGitt.GitHub.GitHubIssue import GitHubIssue
 
 from errbot.backends.test import TestBot
+from errbot.backends.base import Message
+from errbot import BotPlugin
 
 import plugins.labhub
 from plugins.labhub import LabHub
@@ -334,3 +336,31 @@ class TestLabHub(unittest.TestCase):
                               'Command \"hey\" / \"hey there\" not found.')
         with self.assertRaises(queue.Empty):
              testbot.pop_message()
+    def test_ban(self):
+        mock_dev_team = create_autospec(github3.orgs.Team)
+        mock_maint_team = create_autospec(github3.orgs.Team)
+        mock_dev_team.is_member.return_value = False
+        mock_maint_team.is_member.return_value = False
+        labhub, testbot = plugin_testbot(plugins.labhub.LabHub, logging.ERROR)
+        labhub.activate()
+
+        labhub.TEAMS = {'coala newcomers': self.mock_team,
+                        'coala developers': mock_dev_team,
+                        'coala maintainers': mock_maint_team}
+
+        mock_maint_team.is_member.return_value = True
+        testuser = labhub.build_identifier("testuser")
+        self.mock_team.add_member(testuser)
+        # Username in maintainers team
+        mock_maint_team.add_member(testuser)
+        testbot.assertCommand("!ban @testuser","you can\'t ban")
+        mock_maint_team.remove_member(testuser)
+        testbot.assertCommand("!ban @testuser","you\'re banned")
+        # Already banned username
+        testbot.assertCommand("!ban @testuser","user is already")
+        msg = Message.build_message("hello world")
+        msg.frm = testuser
+        testbot.assertCommand(msg.body,"you are banned")
+        # Command used by a non-maintainer
+        self.mock_maint_team.is_member.return_value = False
+        testbot.assertCommand("!ban @testuser","only maintainers")

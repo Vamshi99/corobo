@@ -21,6 +21,14 @@ class Filters(BotPlugin):
             if cmd in commands and msg.frm.room.uri == room:
                 return None, None, None
         return msg, cmd, args
+    @cmdfilter
+    def filter_blacklist_users(self, msg, cmd, args, dry_run):
+        #Blaclist users
+        ban_msg = "@{}, you are banned from our organisation. You can\'t use "
+                  "any of {} commands. :poop:"
+        USERS_TO_BLACKLIST = {'shairpranesh11'}
+        if msg.frm.nick in self.bot_config.USERS_TO_BLACKLIST:
+            return ban_msg.format(msg.frm.nick, self.bot_config.BOT_PREFIX)
 
     @cmdfilter
     def filter_ignored_users(self, msg, cmd, args, dry_run):
