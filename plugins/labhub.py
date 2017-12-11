@@ -154,8 +154,12 @@ class LabHub(BotPlugin):
         repo_name = match.group(1)
         iss_title = match.group(2)
         iss_description = match.group(3) if match.group(3) is not None else ''
+        if msg.frm.nick:
+            mention_username = msg.frm.nick
+        else:
+            mention_username = '**' + msg[sender_full_name] + '**'
         extra_msg = '\nOpened by @{username} at [{backend}]({msg_link})'.format(
-            username=msg.frm.nick,
+            username=mention_username,
             backend=self.bot_config.BACKEND,
             msg_link=message_link(self, msg)
         )
