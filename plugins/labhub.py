@@ -387,3 +387,23 @@ class LabHub(BotPlugin):
                     state=type(self).community_state(pr_count)
                  )
         yield reply
+
+    @re_botcmd(pattern=r'')
+    def add_label(self, msg, match):
+        """Add labels to an issue."""
+        marker = msg.frm.nick
+        org = match.group(2)
+        repo_name = match.group(3)
+        iss_number = match.group(4)
+
+        if self.TEAMS[self.GH_ORG_NAME + ' maintainers'].is_member(marker)
+            or self.TEAMS[self.GH_ORG_NAME +' developers'].is_member(
+                   marker
+               ):
+            try:
+                iss = self.REPOS[repo_name].get_issue(int(iss_number))
+            except KeyError:
+                yield 'Repository doesn\'t exist.'
+            available_labels = iss.available_labels
+            iss.labels(value: mark_labels)
+            
