@@ -334,3 +334,54 @@ class TestLabHub(unittest.TestCase):
                               'Command \"hey\" / \"hey there\" not found.')
         with self.assertRaises(queue.Empty):
              testbot.pop_message()
+
+    def test_mark_issue(self):
+        plugins.labhub.GitHub = create_autospec(IGitt.GitHub.GitHub.GitHub)
+        plugins.labhub.GitLab = create_autospec(IGitt.GitLab.GitLab.GitLab)
+        labhub, testbot = plugin_testbot(plugins.labhub.LabHub, logging.ERROR)
+        labhub.activate()
+
+        mock_github_issue = create_autospec(GitHubIssue)
+        mock_gitlab_issue = create_autospec(GitLabIssue)
+
+        labhub.REPOS = {'a': self.mock_repo}
+
+        mock_dev_team = create_autospec(github3.orgs.Team)
+        mock_maint_team = create_autospec(github3.orgs.Team)
+        mock_dev_team.is_member.return_value = False
+        mock_maint_team.is_member.return_value = False
+
+        labhub.TEAMS = {'coala newcomers': self.mock_team,
+                        'coala developers': mock_dev_team,
+                        'coala maintainers': mock_maint_team}
+
+        cmd = '!mark issue https://github.com/{}/{}/issues/{} {}'
+
+        mock_github_mr.labels = PropertyMock()
+        mock_gitlab_mr.labels = PropertyMock()
+
+        self.mock_repo.get_issue.return_value = mock_github_issue
+        # developer
+        mock_dev_team.is_member.return_value = True
+        testbot.assertCommand(cmd.format('coala', 'a', '23', 'd/n, d/l'),
+                              'given labels')
+
+        self.mock_repo.get_issue.return_value = mock_gitlab_issue
+        testbot.assertCommand(cmd.format('coala', 'a', '23', 'd/n, d/l'),
+                              'given labels')
+
+        self.mock_repo.get_issue.return_value = mock_github_issue
+        # Neither developer nor maintainer
+        mock_maint_team.is_member.return_value = False
+        mock_dev_team.is_member.return_value = False
+        self.mock_team.is_member.return_value = True
+        testbot.assertCommand(cmd.format('coala', 'a', '23', 'd/n, d/l'),
+                              'only developers and maintainers')
+
+        self.mock_repo.get_issue.return_value = mock_gitlab_issue
+        testbot.assertCommand(cmd.format('coala', 'a', '23', 'd/n, d/l'),
+                              'given labels')
+
+        # No labels given
+        testbot.assertCommand(cmd.format('coala', 'a', '23', ''),
+                              'You should give any labels.')

@@ -388,22 +388,34 @@ class LabHub(BotPlugin):
                  )
         yield reply
 
-    @re_botcmd(pattern=r'')
-    def add_label(self, msg, match):
+    @re_botcmd(pattern=r'^mark\s+issue\s+https://(github|gitlab)\.com/([^/]+)/([^/]+)/issues/(\d+)\s+(.+)$') # Ignore LineLengthBear
+    def mark_issue(self, msg, match):
         """Add labels to an issue."""
         marker = msg.frm.nick
         org = match.group(2)
         repo_name = match.group(3)
         iss_number = match.group(4)
+        labels = match.group(5)
 
-        if self.TEAMS[self.GH_ORG_NAME + ' maintainers'].is_member(marker)
+        if labels:
+            labels = labels.split(',')
+        else:
+            return("You should give any labels.")
+        if (self.TEAMS[self.GH_ORG_NAME + ' maintainers'].is_member(marker)
             or self.TEAMS[self.GH_ORG_NAME +' developers'].is_member(
                    marker
-               ):
+               )):
             try:
                 iss = self.REPOS[repo_name].get_issue(int(iss_number))
             except KeyError:
                 yield 'Repository doesn\'t exist.'
-            available_labels = iss.available_labels
-            iss.labels(value: mark_labels)
-            
+            current_labels = list(iss.labels)
+            for label in labels:
+                if label.strip() in iss.available_labels and
+                    label.strip() not in current_labels:
+                    current_labels.append(label)
+            iss.labels = current_labels
+            return('@{}, given labels are added to the issue.'.format(marker))
+        else:
+            return('@{}, only developers and maintainers can add labels to an '
+                   'issue. :poop:'.format(marker))
