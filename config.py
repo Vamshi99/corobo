@@ -69,6 +69,10 @@ if BACKEND == 'Text':
 IGNORE_USERNAMES = os.environ.get("IGNORE_USERNAMES",
                                   'co-robo coala-bot').split()
 
+RESP_ONLY_REQ_USERS = False
+
+REQUIRED_USERS = []
+
 DIVERT_TO_PRIVATE = ('help', )
 
 ROOMS_TO_JOIN = (
