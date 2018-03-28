@@ -23,7 +23,10 @@ class Filters(BotPlugin):
         return msg, cmd, args
 
     @cmdfilter
-    def filter_ignored_users(self, msg, cmd, args, dry_run):
+    def filter_users(self, msg, cmd, args, dry_run):
         if msg.frm.nick in self.bot_config.IGNORE_USERNAMES:
+            return None, None, None
+        if (msg.frm.nick not in self.bot_config.REQUIRED_USERS and
+               self.bot_config.RESP_ONLY_REQ_USER):
             return None, None, None
         return msg, cmd, args
