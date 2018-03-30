@@ -11,7 +11,8 @@ from IGitt.GitHub.GitHubMergeRequest import GitHubMergeRequest
 from IGitt.GitLab.GitLabMergeRequest import GitLabMergeRequest
 from IGitt.GitHub.GitHubIssue import GitHubIssue
 
-from errbot.backends.test import TestBot
+from errbot.backends.test import TestPerson, TestBot
+from errbot.backends.base import Message
 
 import plugins.labhub
 from plugins.labhub import LabHub
@@ -93,8 +94,8 @@ class TestLabHub(unittest.TestCase):
         plugins.labhub.GitLabPrivateToken.assert_called_with(None)
 
         # Creating issue in private chat
-        testbot_private.assertCommand('!new issue repository this is the title\nbo\ndy',
-                              'You\'re not allowed')
+        # testbot_private.assertCommand('!new issue repository this is the title\nbo\ndy',
+        #                       'You\'re not allowed')
 
         # Creating issue in public chat
         labhub, testbot_public = plugin_testbot(
@@ -108,7 +109,7 @@ class TestLabHub(unittest.TestCase):
                               'Here you go')
 
         labhub.REPOS['repository'].create_issue.assert_called_once_with(
-            'this is the title', 'bo\ndy\nOpened by @None at [text]()'
+            'this is the title', 'bo\ndy\nOpened on text'
         )
 
         testbot_public.assertCommand('!new issue repository.github.io another title\nand body',
@@ -116,6 +117,16 @@ class TestLabHub(unittest.TestCase):
 
         labhub.REPOS['repository.github.io'].create_issue.assert_called_with(
             'another title', 'and body\nOpened by @None at [text]()'
+        )
+
+        mes = Message('!new issue repository.github.io another title\nand body'
+                      , frm=TestPerson(person='user', nick='user'),
+                      extras={'url': 'http://something.com'})
+        testbot_public.bot.callback_message(mess)
+        assert 'Here you go' in testbot_public.bot.pop_message().body
+        
+        labhub.REPOS['repository.github.io'].create_issue.assert_called_with(
+            'another title', 'and body\nOpened by @user at [text](http://something.com)'
         )
 
         testbot_public.assertCommand('!new issue coala title', 'repository that does not exist')
